@@ -1,0 +1,77 @@
+replicaCount:
+  frontend: 2
+  backend: 2
+
+image:
+  frontend:
+    repository: your-docker-registry/event-management-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  backend:
+    repository: your-docker-registry/event-management-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+resources:
+  frontend:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  backend:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+service:
+  frontend:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+  backend:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+
+ingress:
+  enabled: true
+  hostname: event-management.example.com
+  tls:
+    enabled: false
+    secretName: event-management-tls
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
+readinessProbe:
+  frontend:
+    path: /health
+    port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  backend:
+    path: /health
+    port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+livenessProbe:
+  frontend:
+    path: /health
+    port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 20
+  backend:
+    path: /health
+    port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 20
+
+strategy:
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%

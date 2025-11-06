@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "event-management.fullname" . }}-backend
+  labels:
+    {{- include "event-management.labels" . | nindent 4 }}
+    component: backend
+spec:
+  replicas: {{ .Values.replicaCount.backend }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      component: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        component: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
+          imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.backend.targetPort }}
+          resources:
+            requests:
+              cpu: {{ .Values.resources.backend.requests.cpu }}
+              memory: {{ .Values.resources.backend.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.backend.limits.cpu }}
+              memory: {{ .Values.resources.backend.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.backend.path }}
+              port: {{ .Values.readinessProbe.backend.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.backend.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.backend.periodSeconds }}
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.backend.path }}
+              port: {{ .Values.livenessProbe.backend.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.backend.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.backend.periodSeconds }}
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 3
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
